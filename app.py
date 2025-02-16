@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 import subprocess
-import os
+import os,sys
 import json
 import time
 import logging
@@ -18,13 +18,30 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 app = FastAPI()
 
-# OpenAI API Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    logging.error("OPENAI_API_KEY is not set! Please set it as an environment variable.")
-    raise ValueError("OPENAI_API_KEY is not set! Please set it as an environment variable.")
 
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+RUNNING_IN_CODESPACES = "CODESPACES" in os.environ
+RUNNING_IN_DOCKER = os.path.exists("/.dockerenv")
+logging.basicConfig(level=logging.INFO)
+
+def ensure_local_path(path: str) -> str:
+    """Ensure the path uses './data/...' locally, but '/data/...' in Docker."""
+    if ((not RUNNING_IN_CODESPACES) and RUNNING_IN_DOCKER): 
+        print("IN HERE",RUNNING_IN_DOCKER) # If absolute Docker path, return as-is :  # If absolute Docker path, return as-is
+        return path
+    
+    else:
+        logging.info(f"Inside ensure_local_path with path: {path}")
+        return path.lstrip("/")  
+
+
+# OpenAI API Configuration
+AIPROXY_TOKEN = os.getenv("AIPROXY_TOKEN")
+                     
+if not AIPROXY_TOKEN:
+    logging.error("AIPROXY_TOKEN is not set! Please set it as an environment variable.")
+    raise ValueError("AIPROXY_TOKEN is not set! Please set it as an environment variable.")
+
+client = openai.OpenAI(api_key=AIPROXY_TOKEN)
 
 def install_dependencies(language: str, dependencies: list):
     """Install dependencies based on the language."""
@@ -109,7 +126,7 @@ def get_llm_response(task: str):
     try:
         response = requests.post(
             "http://aiproxy.sanand.workers.dev/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {os.getenv('AIPROXY_TOKEN')}", "Content-Type": "application/json"},
+            headers={"Authorization": f"Bearer {AIPROXY_TOKEN}", "Content-Type": "application/json"},
             json={
                 "model": "gpt-4o-mini",
                 "messages": [
@@ -139,18 +156,17 @@ async def run(task: str):
         logging.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
-@app.get("/read", response_class=PlainTextResponse)
+
+@app.get("/read",response_class=PlainTextResponse)
 async def read_file(path: str = Query(..., description="Path to the file to read")):
-    """Read file content."""
-    if not os.path.isfile(path):
-        return Response(status_code=404)
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return JSONResponse(content=f.read(), status_code=200)
-    except PermissionError:
-        return Response(status_code=403)
-    except Exception:
-        return Response(status_code=500)
+    logging.info(f"Inside read_file with path: {path}")
+    output_file_path = ensure_local_path(path)
+    if not os.path.exists(output_file_path):
+        raise HTTPException(status_code=500, detail=f"Error executing function in read_file (GET API")
+    with open(output_file_path, "r") as file:
+        content = file.read()
+    return PlainTextResponse(content)
+
 
 @app.get("/")
 def home():

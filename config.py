@@ -101,6 +101,6 @@ Markdown to HTML: markdown
 CSV/Data Processing: pandas
 File Handling: pathlib
 Bash:
-If the task requires "uv" commands, generate only the necessary Bash command.
+If the task requires "uv" commands, generate only the necessary Bash command uv is already installed.
 Other Languages:
 Set "language" accordingly."""
