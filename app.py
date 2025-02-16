@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse, PlainTextResponse, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse, Response
 import subprocess
 import os,sys
 import json
@@ -18,6 +19,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 app = FastAPI()
 
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins; change this for security
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 RUNNING_IN_CODESPACES = "CODESPACES" in os.environ
 RUNNING_IN_DOCKER = os.path.exists("/.dockerenv")
@@ -98,7 +107,7 @@ def execute_code(llmcode: dict):
         logging.error(f"Execution error ({language}): {e.stderr.strip()}")
         return False, e.stderr.strip()
 
-def run_task_fix(task: str, llm_output: str, max_retries: int = 1):
+def run_task_fix(task: str, llm_output: str, max_retries: int = 2):
     """Try executing the task, retrying with LLM fixes if errors occur."""
     attempt = 0
     while attempt <= max_retries:
@@ -148,7 +157,7 @@ async def run(task: str):
         logging.info(f"Received task request: {task}")
         gpt_answer_json = get_llm_response(task)
         print(gpt_answer_json)
-        success = run_task_fix(task, gpt_answer_json, max_retries=1)
+        success = run_task_fix(task, gpt_answer_json, max_retries=2)
         return {"status": "success" if success else "failure"}
     except KeyError as e:
         logging.error(f"Key error: {e}")
