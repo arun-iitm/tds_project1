@@ -1,0 +1,16 @@
+openai
+uv
+fastapi
+uvicorn[standard]
+requests
+httpx
+python-dotenv
+python-dateutil
+pytesseract
+pandas
+numpy
+duckdb
+sqlalchemy
+beautifulsoup4
+markdown
+pathlib
