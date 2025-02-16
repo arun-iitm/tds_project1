@@ -147,6 +147,7 @@ async def run(task: str):
     try:
         logging.info(f"Received task request: {task}")
         gpt_answer_json = get_llm_response(task)
+        print(gpt_answer_json)
         success = run_task_fix(task, gpt_answer_json, max_retries=1)
         return {"status": "success" if success else "failure"}
     except KeyError as e:

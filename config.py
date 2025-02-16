@@ -89,6 +89,9 @@ Python:
 List all required dependencies in "python_dependencies".
 If no external dependencies are needed, return [].
 Do not include pre-installed dependencies in "python_dependencies".
+if asked for emails or anything like that just fetch email dont give anything extra like 
+Give => arunp@example.com (Return only whats needed)
+Dont Give => "Arun Sam" <arun@example.com>
 For date manipulation, strictly use python-dateutil.
 Use pre-installed libraries instead of installing new ones when applicable.
 Pre-installed Python Libraries (Do NOT install again):

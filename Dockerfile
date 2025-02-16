@@ -44,4 +44,4 @@ COPY app.py .
 EXPOSE 8000
 
 # Correct CMD format
-CMD ["python", "app.py"]
+CMD ["python", "app.py", "uv"]
